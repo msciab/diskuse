@@ -1,6 +1,10 @@
-Vibe Coded app for checking space on mac
+Vibe Coded app for checking space on mac.
+Probably works also on other platforms, not tested.
 
-Create with Claude and this prompt.
+![](./screenshot.png)
+
+
+Created with Claude and this prompt.
 
 ```
 implement an utility to see the disk usage
