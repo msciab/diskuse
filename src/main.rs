@@ -1,4 +1,5 @@
 mod cache;
+mod report;
 mod scan;
 
 use eframe::egui;
@@ -158,6 +159,31 @@ impl App {
                 scan::replace(root, &self.root_path, &result.path, result.node);
             }
         }
+    }
+
+    /// Asks where to save a Markdown report of the scanned tree and writes it.
+    fn export_markdown(&mut self) {
+        let Some(root) = &self.root else { return };
+        let (y, m, d) = report::today();
+        let name = self
+            .root_path
+            .file_name()
+            .map_or_else(|| "root".into(), |n| n.to_string_lossy().into_owned());
+        let Some(target) = rfd::FileDialog::new()
+            .set_title("Export Markdown report")
+            .set_file_name(format!("diskuse-{name}-{y:04}-{m:02}-{d:02}.md"))
+            .add_filter("Markdown", &["md"])
+            .save_file()
+        else {
+            return;
+        };
+        self.status = match std::fs::write(
+            &target,
+            report::render(root, &self.root_path, self.min_percent),
+        ) {
+            Ok(()) => format!("Report saved to {}", target.display()),
+            Err(e) => format!("Cannot save {}: {e}", target.display()),
+        };
     }
 
     fn volume_space(&self, path: &Path) -> Option<Space> {
@@ -379,6 +405,16 @@ impl eframe::App for App {
                     .clicked()
                 {
                     self.start_full_scan(false);
+                }
+                if ui
+                    .add_enabled(
+                        self.root.is_some() && self.full_scan.is_none(),
+                        egui::Button::new("Export Markdown"),
+                    )
+                    .on_hover_text("Save a Markdown report of the scanned tree")
+                    .clicked()
+                {
+                    self.export_markdown();
                 }
                 ui.separator();
                 ui.label("Show directories bigger than:");
